@@ -1,0 +1,367 @@
+<!--
+  - Copyright (c) 2014-2016 Cloudware S.A. All rights reserved.
+  -
+  - This file is part of casper-simple-page.
+  -
+  - casper-simple-page is free software: you can redistribute it and/or modify
+  - it under the terms of the GNU Affero General Public License as published by
+  - the Free Software Foundation, either version 3 of the License, or
+  - (at your option) any later version.
+  -
+  - casper-simple-page  is distributed in the hope that it will be useful,
+  - but WITHOUT ANY WARRANTY; without even the implied warranty of
+  - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  - GNU General Public License for more details.
+  -
+  - You should have received a copy of the GNU Affero General Public License
+  - along with casper-simple-page.  If not, see <http://www.gnu.org/licenses/>.
+  -
+ -->
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../casper-icons/casper-icons.html">
+<link rel="import" href="../casper-server-overlay/casper-server-overlay.html">
+<link rel="import" href="../casper-context-menu/casper-context-menu.html">
+
+<dom-module id="casper-simple-page">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+       }
+
+      .paper-input {
+        width: 30%;
+      }
+
+      .iron-icon {
+        color: var(--primary-color);
+      }
+
+      .header {
+        display: flex;
+        margin: 0px 20px 0px 20px;
+        flex-grow: 0;
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .content {
+        position: relative;
+        margin: 0px 20px 20px 20px;
+        background: #ccc;
+        flex-grow: 2;
+      }
+
+      .center {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        flex-direction: column;
+        align-items: center;
+        color: #888;
+      }
+
+      .visible {
+        display: flex
+      }
+
+      .empty-data {
+        --iron-icon-height: 125px;
+        --iron-icon-width:  125px;
+      }
+
+      .fadeout {
+        opacity: 1.0;
+        transition: opacity 2.0s ease-in;
+      }
+
+    </style>
+
+    <div class="header">
+      <slot name="left"></slot>
+      <paper-input tabindex="1" id="search" class="paper-input" no-label-float label="[[searchHint]]">
+        <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
+      </paper-input>
+      <div style="flex-grow: 2;"></div>
+      <slot name="right"></slot>
+    </div>
+    <div id="content" class="content">
+      <slot name="list">
+      </slot>
+      <div id="spinner" class="center">
+        <loading-icon-02 id="loading"></loading-icon-02>
+        <span>[[loadingMessage]]</span>
+      </div>
+      <div id="tabulaRasa" class="center">
+        <iron-icon class="empty-data" icon="casper-icons:empty-data"></iron-icon>
+        <span>[[tabulaRasa]]</span>
+        <slot name="tabula-rasa-action">
+        </slot>
+      <div>
+    </div>
+    <slot name="menu">
+  </template>
+
+  <script>
+    /**
+     * `casper-simple-page`
+     * Simple application page to display a table or list
+     *
+     * @customElement
+     * @polymer
+     */
+    class CasperSimplePage extends Polymer.Element {
+      static get is() { return 'casper-simple-page'; }
+      static get properties() {
+        return {
+          searchHint: {
+            type: String,
+            value: 'Pesquisar'
+          },
+          tabulaRasa: {
+            type: String,
+            value: 'Nenhum resultado encontrado'
+          },
+          loadingMessage: {
+            type: String,
+            value: 'Aguarde p.f.'
+          },
+          items: Object,
+          activeItem: {
+            type: Object,
+            notify: true
+          },
+          filter: Object
+        };
+      }
+
+      set state (state) {
+        switch (state) {
+          case 'loading':
+            this.$.tabulaRasa.classList.remove('visible');
+            this.$.spinner.classList.add('visible');
+            this._list.classList.remove('visible');
+            this._list.style.display = 'none';
+            this.$.search.disabled = true;
+            break;
+          case 'empty':
+            this.$.tabulaRasa.classList.add('visible');
+            this.$.spinner.classList.remove('visible');
+            this._list.style.display = 'none';
+            this.$.search.disabled = false;
+            break;
+          case 'loaded':
+          default:
+            this.$.tabulaRasa.classList.remove('visible');
+            this.$.spinner.classList.remove('visible');
+            this._list.style.display = 'block';
+            this.$.search.disabled = false;
+            break;
+        }
+      }
+
+      connectedCallback () {
+        super.connectedCallback();
+        this.$.loading.margin = '12px';
+        this._resizeTimeout = undefined;
+        this._isVaadinGrid = false;
+
+        for (let child of this.children ) {
+          if ( child.hasAttribute('slot') ) {
+            if ( child.getAttribute('slot') === 'list' ) {
+              this._list = child;
+              this._list.style.display = 'none';
+              this._list.addEventListener('click', (e) => this._onClick(e));
+              this._list.addEventListener('mousemove', (e) => this._onMousemove(e));
+              if ( this._list.tagName === 'VAADIN-GRID' ) {
+                this._isVaadinGrid = true;
+              }
+              this._list.items = this.items;
+              this._resizeHandler();
+            } else if ( child.getAttribute('slot') === 'menu' ) {
+              this._menu = child;
+              this._menu.fitInto = this;
+              this._menu.addEventListener('click', (e) => this._contextMenuClick(e));
+              this._menu.addEventListener('mouseleave', (e) => this._contextMenuLeave(e));
+              this._menu.addEventListener('mousemove', (e) => this._contextMenuMove(e));
+              this.shadowRoot.appendChild(child); // Important! move to this page shadow root
+            }
+          }
+        }
+        this.state = 'loading';
+        window.addEventListener('resize', e => this._resizeThrottler(e));
+
+        this._collator = new Intl.Collator('pt', {usage: 'search', sensitivity: 'base'});
+        this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
+
+        //this.$.search.focus(); TODO focus search
+
+        window.pig = this; // TODO remove PIG
+      }
+
+      _debouncedFilterItems (event) {
+        if ( this._filterDebounceTimer === undefined ) {
+          this._filterItems(event.detail.value);
+          this._filterDebounceTimer = setTimeout((e) => this._filterItems(), 500);
+        }
+      }
+
+      _filterItems (query) {
+        let filter = this.filter;
+
+        query = query || this.$.search.value;
+        if ( query === '' ) {
+          this._list.items = null;
+          this._list.items = this.items;
+        } else {
+          console.time('filter');
+          let filteredItems = [];
+
+          for (let item of this.items ) {
+            if ( filter(this._collator, query, item) ) {
+              filteredItems.push(item);
+            }
+          }
+          console.timeEnd('filter');
+          this._list.items = null;
+          this._list.items = filteredItems;
+        }
+        if ( this._list.items.length === 0 ) {
+          this.state = 'empty';
+        } else {
+          this.state = 'loaded';
+        }
+        this._filterDebounceTimer = undefined;
+      }
+
+      _onClick (event) {
+        let target, action;
+        let target_path
+
+        // ... go up in event path to find an element with a "row-button" or "module" class ...
+        if ( event.path !== undefined ) {
+          target_path = event.path
+        } else {
+          target_path = event.b
+        }
+
+        if ( target_path === undefined ) {
+          // Use event.composedPath if event.path and event.b doesn't exist
+          target_path = event.composedPath();
+        }
+
+        // ... go up to find an element with an action attribute ...
+        for ( target of target_path ) {
+          if ( ! target.classList ) {
+            break;
+          }
+          if ( target.idx !== undefined && target.hasAttribute('action')) {
+            this.activeItem = this.items[target.idx];
+            action = target.getAttribute('action');
+            if ( action === 'menu' ) {
+              this._menu.positionTarget = target;
+              if ( this._isVaadinGrid ) {
+                this._list.selectedItems = [ this.activeItem ];
+              }
+              this._menu.refit();
+              clearTimeout(this._menuHideTimer);
+              this._menuHideTimer = undefined;
+              this._menu.classList.remove('fadeout');
+              this._menu.style.opacity = 1.0;
+              event.preventDefault();
+              event.stopPropagation();
+              if ( ! this._menu.opened ) {
+                this._menu.open();
+              }
+              return;
+            } else {
+              break;
+            }
+          }
+        }
+
+        if ( this.activeItem !== undefined && action !== undefined ) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.dispatchEvent(new CustomEvent('click', { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
+        }
+      }
+
+      _onMousemove (event) {
+        let depth = 0;
+
+        if ( this._tooltipBbox !== undefined ) {
+          if (event.clientX >= this._tooltipBbox.left && event.clientX <= this._tooltipBbox.right &&
+              event.clientY >= this._tooltipBbox.top  && event.clientY <= this._tooltipBbox.bottom) {
+            return;
+          }
+          window.app.tooltip.hide(); // TODO pass app
+          this._tooltipBbox = undefined;
+        }
+
+        for ( let target of event.composedPath() ) {
+
+          if ( target instanceof HTMLElement && target.tooltip ) {
+            this._tooltipBbox = target.getBoundingClientRect();
+            window.app.tooltip.show(target.tooltip, target);
+            break;
+          }
+          depth++;
+          if  ( depth === 3 ) {
+            break;
+          }
+        }
+      }
+
+      _contextMenuClick (event) {
+        for ( let target of event.composedPath() ) {
+          if ( target instanceof HTMLElement && target.hasAttribute('action') ) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.dispatchEvent(new CustomEvent('click', { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
+            this._menu.close();
+            break;
+          }
+        }
+      }
+
+      _contextMenuLeave (event) {
+        this._menu.classList.add('fadeout');
+        this._menu.style.opacity = 0.6;
+        this._menuHideTimer = setTimeout((e) => (this._menu.close(), this._menuHideTimer = undefined), 2000);
+      }
+
+      _contextMenuMove () {
+        if ( this._menuHideTimer !== undefined ) {
+          clearTimeout(this._menuHideTimer);
+          this._menuHideTimer = undefined;
+          this._menu.classList.remove('fadeout');
+          this._menu.style.opacity = 1.0;
+        }
+      }
+
+      _resizeThrottler (e) {
+        // ignore resize events as long as an actualResizeHandler execution is in the queue
+        if ( ! this._resizeTimeout ) {
+          this._resizeTimeout = setTimeout(function() {
+            this._resizeTimeout = null;
+            this._resizeHandler();
+            // The actualResizeHandler will execute at a rate of 15fps
+          }.bind(this), 66);
+        }
+      }
+
+      _resizeHandler () {
+        this._list.style.height = this.$.content.clientHeight + 'px';
+      }
+
+    }
+
+
+    window.customElements.define(CasperSimplePage.is, CasperSimplePage);
+  </script>
+</dom-module>
