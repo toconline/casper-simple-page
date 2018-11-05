@@ -230,7 +230,9 @@
           this._list.items = null;
           this._list.items = filteredItems;
         }
-        if ( this._list.items.length === 0 ) {
+        if ( this._list.items === null ||  this._list.items === undefined ) {
+          this.state = 'loading';
+        } else if ( this._list.items.length === 0 ) {
           this.state = 'empty';
         } else {
           this.state = 'loaded';
