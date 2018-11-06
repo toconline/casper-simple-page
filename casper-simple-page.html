@@ -138,7 +138,9 @@
             type: Object,
             notify: true
           },
-          filter: Object
+          searchFields: {
+            type: Object
+          }
         };
       }
 
@@ -171,8 +173,6 @@
           }
         }
         window.addEventListener('resize', e => this._resizeThrottler(e));
-
-        this._collator = new Intl.Collator('pt', {usage: 'search', sensitivity: 'base'});
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
         this._updateState();
         //this.$.search.focus(); TODO focus search
@@ -193,6 +193,7 @@
       }
 
       _filterItems (query) {
+        let itemMatched, matches;
         let filter = this.filter;
 
         query = query || this.$.search.value;
@@ -202,9 +203,27 @@
         } else {
           console.time('filter');
           let filteredItems = [];
+          let queryNormalized = (query.normalize('NFD').replace(/[\u0300-\u036f]/g, '')).toLowerCase().split(' ').filter(function(el) {  return el !== '' });
 
           for (let item of this.items ) {
-            if ( filter(this._collator, query, item) ) {
+            itemLoop: {
+              itemMatched = false;
+              for ( let field of this.searchFields ) {
+                matches = 0;
+
+                let normalizedField = item[field].toString().normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                for ( let term of queryNormalized ) {
+                  if ( normalizedField.indexOf(term) !== -1 ) {
+                    matches++;
+                    if ( matches === queryNormalized.length ) {
+                      itemMatched = true;
+                      break itemLoop;
+                    }
+                  }
+                }
+              }
+            }
+            if ( itemMatched ) {
               filteredItems.push(item);
             }
           }
