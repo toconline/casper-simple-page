@@ -103,7 +103,7 @@
         </slot>
       <div>
     </div>
-    <slot name="menu">
+    <slot name="menu"></slot>
   </template>
 
   <script>
@@ -130,7 +130,10 @@
             type: String,
             value: 'Aguarde p.f.'
           },
-          items: Object,
+          items: {
+            type: Object,
+            observer: '_onItemsChanged'
+          },
           activeItem: {
             type: Object,
             notify: true
@@ -144,8 +147,10 @@
           case 'loading':
             this.$.tabulaRasa.classList.remove('visible');
             this.$.spinner.classList.add('visible');
-            this._list.classList.remove('visible');
-            this._list.style.display = 'none';
+            if ( this._list ) {
+              this._list.classList.remove('visible');
+              this._list.style.display = 'none';
+            }
             this.$.search.disabled = true;
             break;
           case 'empty':
@@ -199,8 +204,11 @@
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
 
         //this.$.search.focus(); TODO focus search
+      }
 
-        window.pig = this; // TODO remove PIG
+      _onItemsChanged (value) {
+        console.log('value changed', value !== null ? value.length : 0);
+        this._updateState();
       }
 
       _debouncedFilterItems (event) {
@@ -301,7 +309,7 @@
               event.clientY >= this._tooltipBbox.top  && event.clientY <= this._tooltipBbox.bottom) {
             return;
           }
-          window.app.tooltip.hide(); // TODO pass app
+          this.app.tooltip.hide();
           this._tooltipBbox = undefined;
         }
 
@@ -309,7 +317,7 @@
 
           if ( target instanceof HTMLElement && target.tooltip ) {
             this._tooltipBbox = target.getBoundingClientRect();
-            window.app.tooltip.show(target.tooltip, target);
+            this.app.tooltip.show(target.tooltip, target);
             break;
           }
           depth++;
@@ -359,6 +367,16 @@
 
       _resizeHandler () {
         this._list.style.height = this.$.content.clientHeight + 'px';
+      }
+
+      _updateState () {
+        if ( !this._list || !this._list.items ) {
+          this.state = 'loading';
+        } else if ( this._list.items.length === 0 ) {
+          this.state = 'empty';
+        } else {
+          this.state = 'loaded';
+        }
       }
 
     }
