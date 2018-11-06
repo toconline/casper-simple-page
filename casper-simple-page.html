@@ -142,33 +142,6 @@
         };
       }
 
-      set state (state) {
-        switch (state) {
-          case 'loading':
-            this.$.tabulaRasa.classList.remove('visible');
-            this.$.spinner.classList.add('visible');
-            if ( this._list ) {
-              this._list.classList.remove('visible');
-              this._list.style.display = 'none';
-            }
-            this.$.search.disabled = true;
-            break;
-          case 'empty':
-            this.$.tabulaRasa.classList.add('visible');
-            this.$.spinner.classList.remove('visible');
-            this._list.style.display = 'none';
-            this.$.search.disabled = false;
-            break;
-          case 'loaded':
-          default:
-            this.$.tabulaRasa.classList.remove('visible');
-            this.$.spinner.classList.remove('visible');
-            this._list.style.display = 'block';
-            this.$.search.disabled = false;
-            break;
-        }
-      }
-
       connectedCallback () {
         super.connectedCallback();
         this.$.loading.margin = '12px';
@@ -197,17 +170,18 @@
             }
           }
         }
-        this.state = 'loading';
         window.addEventListener('resize', e => this._resizeThrottler(e));
 
         this._collator = new Intl.Collator('pt', {usage: 'search', sensitivity: 'base'});
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
-
+        this._updateState();
         //this.$.search.focus(); TODO focus search
       }
 
       _onItemsChanged (value) {
-        console.log('value changed', value !== null ? value.length : 0);
+        if ( this._list ) {
+          this._list.items = value;
+        }
         this._updateState();
       }
 
@@ -315,9 +289,12 @@
 
         for ( let target of event.composedPath() ) {
 
-          if ( target instanceof HTMLElement && target.tooltip ) {
-            this._tooltipBbox = target.getBoundingClientRect();
-            this.app.tooltip.show(target.tooltip, target);
+          if ( target instanceof HTMLElement) {
+            let tooltip = target.tooltip || target.getAttribute('tooltip');
+            if ( tooltip ) {
+              this._tooltipBbox = target.getBoundingClientRect();
+              this.app.tooltip.show(tooltip, target);
+            }
             break;
           }
           depth++;
@@ -376,6 +353,35 @@
           this.state = 'empty';
         } else {
           this.state = 'loaded';
+        }
+      }
+
+      set state (state) {
+        if ( this._state !== state ) {
+          switch (state) {
+            case 'loading':
+              this.$.tabulaRasa.classList.remove('visible');
+              this.$.spinner.classList.add('visible');
+              if ( this._list ) {
+                this._list.classList.remove('visible');
+                this._list.style.display = 'none';
+              }
+              this.$.search.disabled = true;
+              break;
+            case 'empty':
+              this.$.tabulaRasa.classList.add('visible');
+              this.$.spinner.classList.remove('visible');
+              this._list.style.display = 'none';
+              this.$.search.disabled = false;
+              break;
+            case 'loaded':
+            default:
+              this.$.tabulaRasa.classList.remove('visible');
+              this.$.spinner.classList.remove('visible');
+              this._list.style.display = 'block';
+              this.$.search.disabled = false;
+              break;
+          }
         }
       }
 
