@@ -50,7 +50,7 @@
       .content {
         position: relative;
         margin: 0px 20px 20px 20px;
-        background: #ccc;
+        background: var(--secondary-color);
         flex-grow: 2;
       }
 
@@ -159,6 +159,7 @@
               this._list.addEventListener('mousemove', (e) => this._onMousemove(e));
               if ( this._list.tagName === 'VAADIN-GRID' ) {
                 this._isVaadinGrid = true;
+                this._list.style.backgroundColor = 'var(--secondary-color)';
               }
               this._list.items = this.items;
               this._resizeHandler();
@@ -214,16 +215,18 @@
           for (let item of this.items ) {
             itemLoop: {
               itemMatched = false;
-              for ( let field of this.searchFields ) {
-                matches = 0;
+              if ( this.searchFields ) {
+                for ( let field of this.searchFields ) {
+                  matches = 0;
 
-                let normalizedField = item[field].toString().normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                for ( let term of queryNormalized ) {
-                  if ( normalizedField.indexOf(term) !== -1 ) {
-                    matches++;
-                    if ( matches === queryNormalized.length ) {
-                      itemMatched = true;
-                      break itemLoop;
+                  let normalizedField = item[field].toString().normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                  for ( let term of queryNormalized ) {
+                    if ( normalizedField.indexOf(term) !== -1 ) {
+                      matches++;
+                      if ( matches === queryNormalized.length ) {
+                        itemMatched = true;
+                        break itemLoop;
+                      }
                     }
                   }
                 }
