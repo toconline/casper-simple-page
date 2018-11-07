@@ -188,6 +188,12 @@
       _debouncedFilterItems (event) {
         if ( this._filterDebounceTimer === undefined ) {
           this._filterItems(event.detail.value);
+        } else {
+          clearTimeout(this._filterDebounceTimer);
+          this._filterDebounceTimer = undefined;
+        }
+
+        if ( this._filterDebounceTimer === undefined ) {
           this._filterDebounceTimer = setTimeout((e) => this._filterItems(), 500);
         }
       }
