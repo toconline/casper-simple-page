@@ -16,7 +16,7 @@
   - You should have received a copy of the GNU Affero General Public License
   - along with casper-simple-page.  If not, see <http://www.gnu.org/licenses/>.
   -
- -->
+-->
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="../casper-icons/casper-icons.html">
 <link rel="import" href="../casper-server-overlay/casper-server-overlay.html">
@@ -25,88 +25,88 @@
 <dom-module id="casper-simple-page">
   <template>
     <style>
-      :host {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-       }
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
 
-      .paper-input {
-        width: 30%;
-      }
+    .paper-input {
+      width: 30%;
+    }
 
-      .iron-icon {
-        color: var(--primary-color);
-      }
+    .iron-icon {
+      color: var(--primary-color);
+    }
 
-      .header {
-        display: flex;
-        margin: 0px 20px 0px 20px;
-        flex-grow: 0;
-        flex-direction: row;
-        align-items: center;
-      }
+    .header {
+      display: flex;
+      margin: 0px 20px 0px 20px;
+      flex-grow: 0;
+      flex-direction: row;
+      align-items: center;
+    }
 
-      .content {
-        position: relative;
-        margin: 0px 20px 20px 20px;
-        background: var(--secondary-color);
-        flex-grow: 2;
-      }
+    .content {
+      position: relative;
+      margin: 0px 20px 20px 20px;
+      background: var(--secondary-color);
+      flex-grow: 2;
+    }
 
-      .center {
-        display: none;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        flex-direction: column;
-        align-items: center;
-        color: #888;
-      }
+    .center {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      flex-direction: column;
+      align-items: center;
+      color: #888;
+    }
 
-      .visible {
-        display: flex
-      }
+    .visible {
+      display: flex
+    }
 
-      .empty-data {
-        --iron-icon-height: 125px;
-        --iron-icon-width:  125px;
-      }
+    .empty-data {
+      --iron-icon-height: 125px;
+      --iron-icon-width:  125px;
+    }
 
-      .fadeout {
-        opacity: 1.0;
-        transition: opacity 2.0s ease-in;
-      }
+    .fadeout {
+      opacity: 1.0;
+      transition: opacity 2.0s ease-in;
+    }
 
-    </style>
+  </style>
 
-    <div class="header">
-      <slot name="left"></slot>
-      <paper-input tabindex="1" id="search" class="paper-input" no-label-float label="[[searchHint]]">
-        <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
-      </paper-input>
-      <div style="flex-grow: 2;"></div>
-      <slot name="right"></slot>
+  <div class="header">
+    <slot name="left"></slot>
+    <paper-input tabindex="1" id="search" class="paper-input" no-label-float label="[[searchHint]]">
+      <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
+    </paper-input>
+    <div style="flex-grow: 2;"></div>
+    <slot name="right"></slot>
+  </div>
+  <div id="content" class="content">
+    <slot name="list">
+    </slot>
+    <div id="spinner" class="center">
+      <loading-icon-02 id="loading"></loading-icon-02>
+      <span>[[loadingMessage]]</span>
     </div>
-    <div id="content" class="content">
-      <slot name="list">
+    <div id="tabulaRasa" class="center">
+      <iron-icon class="empty-data" icon="casper-icons:empty-data"></iron-icon>
+      <span>[[tabulaRasa]]</span>
+      <slot name="tabula-rasa-action">
       </slot>
-      <div id="spinner" class="center">
-        <loading-icon-02 id="loading"></loading-icon-02>
-        <span>[[loadingMessage]]</span>
-      </div>
-      <div id="tabulaRasa" class="center">
-        <iron-icon class="empty-data" icon="casper-icons:empty-data"></iron-icon>
-        <span>[[tabulaRasa]]</span>
-        <slot name="tabula-rasa-action">
-        </slot>
       <div>
-    </div>
-    <slot name="menu"></slot>
-  </template>
+      </div>
+      <slot name="menu"></slot>
+    </template>
 
-  <script>
+    <script>
     /**
      * `casper-simple-page`
      * Simple application page to display a table or list
@@ -114,7 +114,7 @@
      * @customElement
      * @polymer
      */
-    class CasperSimplePage extends Polymer.Element {
+     class CasperSimplePage extends Polymer.Element {
       static get is() { return 'casper-simple-page'; }
       static get properties() {
         return {
@@ -139,6 +139,9 @@
             notify: true
           },
           searchFields: {
+            type: Object
+          },
+          filterFunction: {
             type: Object
           }
         };
@@ -176,7 +179,9 @@
         window.addEventListener('resize', e => this._resizeThrottler(e));
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
         this._updateState();
-        //this.$.search.focus(); TODO focus search
+        setTimeout(function() { 
+          this.$.search.focus();
+        }.bind(this), 0);
       }
 
       _onItemsChanged (value) {
@@ -187,50 +192,77 @@
       }
 
       _debouncedFilterItems (event) {
+
         if ( this._filterDebounceTimer === undefined ) {
-          this._filterItems(event.detail.value);
+          this.filterItems(event.detail.value);
         } else {
           clearTimeout(this._filterDebounceTimer);
         }
-        this._filterDebounceTimer = setTimeout((e) => this._filterItems(), 150);          
+        this._filterDebounceTimer = setTimeout((e) => this.filterItems(), 200);          
       }
 
-      _filterItems (query) {
+      filterItems (query) {
         let itemMatched, matches;
-        let filter = this.filter;
+        let filter = this.filterFunction;
 
         query = query || this.$.search.value;
-        if ( query === this._lastQuery ) {
+        if ( query === this._lastQuery && !filter) {
           return;
-        } else {
-          this._lastQuery = query;
         }
+        this._lastQuery = query;
 
-        if ( query === '' ) {
+        if ( query === '' && !filter ) {
           this._list.items = null;
           this._list.items = this.items;
         } else {
           console.time('filter');
           let filteredItems = [];
           let queryNormalized = (query.normalize('NFD').replace(/[\u0300-\u036f]/g, '')).toLowerCase().split(' ').filter(function(el) {  return el !== '' });
-
           for (let item of this.items ) {
             itemLoop: {
               itemMatched = false;
               if ( this.searchFields ) {
                 for ( let field of this.searchFields ) {
-                  matches = 0;
 
+                  matches = 0;
                   let normalizedField = item[field].toString().normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                  for ( let term of queryNormalized ) {
-                    if ( normalizedField.indexOf(term) !== -1 ) {
-                      matches++;
-                      if ( matches === queryNormalized.length ) {
+                  let filterResult = 1;
+                  
+                  if (filter) {
+                    filterResult = filter(queryNormalized.join(" "), normalizedField, field);
+                    switch (filterResult) {
+                      case 0:
+                      itemMatched = false;
+                      break itemLoop;
+                      break;
+                      case 1:
+                      if (query === "") {
                         itemMatched = true;
-                        break itemLoop;
+                      }
+                      break;
+                      case 2:
+                      itemMatched = true;
+                      break itemLoop;
+                      break;
+                    }
+                  }
+
+                  if (query !== "") {
+                    for ( let term of queryNormalized ) {
+                      if ( normalizedField.indexOf(term) !== -1 && filterResult === 1) {
+                        matches++;
+                        if ( matches === queryNormalized.length ) {
+                          itemMatched = true;
+                          if (!filter) {
+                            break itemLoop;
+                          } else {
+                            continue;
+                          }
+                        }
                       }
                     }
                   }
+
                 }
               }
             }
@@ -242,6 +274,7 @@
           this._list.items = null;
           this._list.items = filteredItems;
         }
+
         if ( this._list.items === null ||  this._list.items === undefined ) {
           this.state = 'loading';
         } else if ( this._list.items.length === 0 ) {
@@ -249,6 +282,7 @@
         } else {
           this.state = 'loaded';
         }
+
         this._filterDebounceTimer = undefined;
       }
 
@@ -305,6 +339,7 @@
           this.app.tooltip.hide();
           this.dispatchEvent(new CustomEvent('click', { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
         }
+
       }
 
       _onMousemove (event) {
@@ -312,58 +347,58 @@
 
         if ( this._tooltipBbox !== undefined ) {
           if (event.clientX >= this._tooltipBbox.left && event.clientX <= this._tooltipBbox.right &&
-              event.clientY >= this._tooltipBbox.top  && event.clientY <= this._tooltipBbox.bottom) {
+            event.clientY >= this._tooltipBbox.top  && event.clientY <= this._tooltipBbox.bottom) {
             return;
-          }
-          this.app.tooltip.hide();
-          this._tooltipBbox = undefined;
         }
-
-        for ( let target of event.composedPath() ) {
-
-          if ( target instanceof HTMLElement) {
-            let tooltip = target.tooltip || target.getAttribute('tooltip');
-            if ( tooltip ) {
-              this._tooltipBbox = target.getBoundingClientRect();
-              this.app.tooltip.show(tooltip, target);
-            }
-            break;
-          }
-          depth++;
-          if  ( depth === 3 ) {
-            break;
-          }
-        }
+        this.app.tooltip.hide();
+        this._tooltipBbox = undefined;
       }
 
-      _contextMenuClick (event) {
-        for ( let target of event.composedPath() ) {
-          if ( target instanceof HTMLElement && target.hasAttribute('action') ) {
-            event.preventDefault();
-            event.stopPropagation();
-            this.dispatchEvent(new CustomEvent('click', { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
-            this._menu.close();
-            break;
+      for ( let target of event.composedPath() ) {
+
+        if ( target instanceof HTMLElement) {
+          let tooltip = target.tooltip || target.getAttribute('tooltip');
+          if ( tooltip ) {
+            this._tooltipBbox = target.getBoundingClientRect();
+            this.app.tooltip.show(tooltip, target);
           }
+          break;
+        }
+        depth++;
+        if  ( depth === 3 ) {
+          break;
         }
       }
+    }
 
-      _contextMenuLeave (event) {
-        this._menu.classList.add('fadeout');
-        this._menu.style.opacity = 0.6;
-        this._menuHideTimer = setTimeout((e) => (this._menu.close(), this._menuHideTimer = undefined), 2000);
-      }
-
-      _contextMenuMove () {
-        if ( this._menuHideTimer !== undefined ) {
-          clearTimeout(this._menuHideTimer);
-          this._menuHideTimer = undefined;
-          this._menu.classList.remove('fadeout');
-          this._menu.style.opacity = 1.0;
+    _contextMenuClick (event) {
+      for ( let target of event.composedPath() ) {
+        if ( target instanceof HTMLElement && target.hasAttribute('action') ) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.dispatchEvent(new CustomEvent('click', { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
+          this._menu.close();
+          break;
         }
       }
+    }
 
-      _resizeThrottler (e) {
+    _contextMenuLeave (event) {
+      this._menu.classList.add('fadeout');
+      this._menu.style.opacity = 0.6;
+      this._menuHideTimer = setTimeout((e) => (this._menu.close(), this._menuHideTimer = undefined), 2000);
+    }
+
+    _contextMenuMove () {
+      if ( this._menuHideTimer !== undefined ) {
+        clearTimeout(this._menuHideTimer);
+        this._menuHideTimer = undefined;
+        this._menu.classList.remove('fadeout');
+        this._menu.style.opacity = 1.0;
+      }
+    }
+
+    _resizeThrottler (e) {
         // ignore resize events as long as an actualResizeHandler execution is in the queue
         if ( ! this._resizeTimeout ) {
           this._resizeTimeout = setTimeout(function() {
@@ -392,27 +427,27 @@
         if ( this._state !== state ) {
           switch (state) {
             case 'loading':
-              this.$.tabulaRasa.classList.remove('visible');
-              this.$.spinner.classList.add('visible');
-              if ( this._list ) {
-                this._list.classList.remove('visible');
-                this._list.style.display = 'none';
-              }
-              this.$.search.disabled = true;
-              break;
-            case 'empty':
-              this.$.tabulaRasa.classList.add('visible');
-              this.$.spinner.classList.remove('visible');
+            this.$.tabulaRasa.classList.remove('visible');
+            this.$.spinner.classList.add('visible');
+            if ( this._list ) {
+              this._list.classList.remove('visible');
               this._list.style.display = 'none';
-              this.$.search.disabled = false;
-              break;
+            }
+            this.$.search.disabled = true;
+            break;
+            case 'empty':
+            this.$.tabulaRasa.classList.add('visible');
+            this.$.spinner.classList.remove('visible');
+            this._list.style.display = 'none';
+            this.$.search.disabled = false;
+            break;
             case 'loaded':
             default:
-              this.$.tabulaRasa.classList.remove('visible');
-              this.$.spinner.classList.remove('visible');
-              this._list.style.display = 'block';
-              this.$.search.disabled = false;
-              break;
+            this.$.tabulaRasa.classList.remove('visible');
+            this.$.spinner.classList.remove('visible');
+            this._list.style.display = 'block';
+            this.$.search.disabled = false;
+            break;
           }
         }
       }
