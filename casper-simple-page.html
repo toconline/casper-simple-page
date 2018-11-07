@@ -191,12 +191,8 @@
           this._filterItems(event.detail.value);
         } else {
           clearTimeout(this._filterDebounceTimer);
-          this._filterDebounceTimer = undefined;
         }
-
-        if ( this._filterDebounceTimer === undefined ) {
-          this._filterDebounceTimer = setTimeout((e) => this._filterItems(), 500);
-        }
+        this._filterDebounceTimer = setTimeout((e) => this._filterItems(), 150);          
       }
 
       _filterItems (query) {
@@ -204,6 +200,12 @@
         let filter = this.filter;
 
         query = query || this.$.search.value;
+        if ( query === this._lastQuery ) {
+          return;
+        } else {
+          this._lastQuery = query;
+        }
+
         if ( query === '' ) {
           this._list.items = null;
           this._list.items = this.items;
