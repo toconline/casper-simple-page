@@ -291,6 +291,7 @@
               if ( ! this._menu.opened ) {
                 this._menu.open();
               }
+              this.app.tooltip.hide();
               return;
             } else {
               break;
@@ -301,6 +302,7 @@
         if ( this.activeItem !== undefined && action !== undefined ) {
           event.preventDefault();
           event.stopPropagation();
+          this.app.tooltip.hide();
           this.dispatchEvent(new CustomEvent('click', { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
         }
       }
