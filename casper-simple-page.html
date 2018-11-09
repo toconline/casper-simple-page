@@ -441,6 +441,7 @@
       }
 
       _resizeHandler () {
+        console.log("resize ch=", this.$.content.clientHeight);
         this._list.style.height = this.$.content.clientHeight + 'px';
       }
 
