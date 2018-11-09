@@ -115,7 +115,11 @@
      * @polymer
      */
      class CasperSimplePage extends Polymer.Element {
-      static get is() { return 'casper-simple-page'; }
+
+      static get is () {
+        return 'casper-simple-page';
+      }
+
       static get properties() {
         return {
           searchHint: {
@@ -145,6 +149,11 @@
             type: Object
           }
         };
+
+      }
+
+      static get clickEvent () {
+        return 'tap';
       }
 
       connectedCallback () {
@@ -179,7 +188,7 @@
         window.addEventListener('resize', e => this._resizeThrottler(e));
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
         this._updateState();
-        setTimeout(function() { 
+        setTimeout(function() {
           this.$.search.focus();
         }.bind(this), 0);
       }
@@ -198,7 +207,7 @@
         } else {
           clearTimeout(this._filterDebounceTimer);
         }
-        this._filterDebounceTimer = setTimeout((e) => this.filterItems(), 200);          
+        this._filterDebounceTimer = setTimeout((e) => this.filterItems(), 200);
       }
 
       filterItems (query) {
@@ -227,7 +236,7 @@
                   matches = 0;
                   let normalizedField = item[field].toString().normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
                   let filterResult = 1;
-                  
+
                   if (filter) {
                     filterResult = filter(queryNormalized.join(" "), normalizedField, field);
                     switch (filterResult) {
@@ -236,7 +245,7 @@
                       break itemLoop;
                       break;
                       case 1:
-                      if (query === "") {
+                      if ( query === '' ) {
                         itemMatched = true;
                       }
                       break;
@@ -247,7 +256,7 @@
                     }
                   }
 
-                  if (query !== "") {
+                  if ( query !== '' ) {
                     for ( let term of queryNormalized ) {
                       if ( normalizedField.indexOf(term) !== -1 && filterResult === 1) {
                         matches++;
@@ -290,23 +299,18 @@
         let target, action;
         let target_path
 
-        // ... go up in event path to find an element with a "row-button" or "module" class ...
+        // ... find event path for any browser ...
         if ( event.path !== undefined ) {
-          target_path = event.path
+          target_path = event.path;
         } else {
-          target_path = event.b
+          target_path = event.b;
         }
-
         if ( target_path === undefined ) {
-          // Use event.composedPath if event.path and event.b doesn't exist
           target_path = event.composedPath();
         }
 
         // ... go up to find an element with an action attribute ...
         for ( target of target_path ) {
-          if ( ! target.classList ) {
-            break;
-          }
           if ( target.idx !== undefined && target.hasAttribute('action')) {
             this.activeItem = this.items[target.idx];
             action = target.getAttribute('action');
@@ -322,10 +326,11 @@
               this._menu.style.opacity = 1.0;
               event.preventDefault();
               event.stopPropagation();
+              this.app.socket.userActivity(event);
+              this.app.tooltip.hide();
               if ( ! this._menu.opened ) {
                 this._menu.open();
               }
-              this.app.tooltip.hide();
               return;
             } else {
               break;
@@ -336,77 +341,103 @@
         if ( this.activeItem !== undefined && action !== undefined ) {
           event.preventDefault();
           event.stopPropagation();
+          this.app.socket.userActivity(event);
           this.app.tooltip.hide();
-          this.dispatchEvent(new CustomEvent('click', { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
+          this.dispatchEvent(new CustomEvent(CasperSimplePage.clickEvent, { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
         }
 
       }
 
       _onMousemove (event) {
         let depth = 0;
+        let target_path;
 
+        // ... detect if the mouse is still inside the BB that triggered the tooltip ...
         if ( this._tooltipBbox !== undefined ) {
           if (event.clientX >= this._tooltipBbox.left && event.clientX <= this._tooltipBbox.right &&
-            event.clientY >= this._tooltipBbox.top  && event.clientY <= this._tooltipBbox.bottom) {
+              event.clientY >= this._tooltipBbox.top  && event.clientY <= this._tooltipBbox.bottom) {
             return;
-        }
-        this.app.tooltip.hide();
-        this._tooltipBbox = undefined;
-      }
-
-      for ( let target of event.composedPath() ) {
-
-        if ( target instanceof HTMLElement) {
-          let tooltip = target.tooltip || target.getAttribute('tooltip');
-          if ( tooltip ) {
-            this._tooltipBbox = target.getBoundingClientRect();
-            this.app.tooltip.show(tooltip, target);
           }
-          break;
+          this.app.tooltip.hide();
+          this._tooltipBbox = undefined;
         }
-        depth++;
-        if  ( depth === 3 ) {
-          break;
+
+        // ... find event path for any browser ...
+        if ( event.path !== undefined ) {
+          target_path = event.path;
+        } else {
+          target_path = event.b;
+        }
+        if ( target_path === undefined ) {
+          target_path = event.composedPath(); // Use event.composedPath if event.path and event.b doesn't exist
+        }
+
+        // ... go up in event path to find an element with a tooltip attribute or prop ...
+        for ( let target of target_path ) {
+          if ( target instanceof HTMLElement ) {
+            let tooltip = target.tooltip || target.getAttribute('tooltip');
+            if ( tooltip ) {
+              this._tooltipBbox = target.getBoundingClientRect();
+              this.app.tooltip.show(tooltip,  event.composedPath()[0]);
+              break;
+            }
+          }
+          depth++;
+          if  ( depth === 3 ) {
+            break;
+          }
         }
       }
-    }
 
-    _contextMenuClick (event) {
-      for ( let target of event.composedPath() ) {
-        if ( target instanceof HTMLElement && target.hasAttribute('action') ) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.dispatchEvent(new CustomEvent('click', { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
-          this._menu.close();
-          break;
+      _contextMenuClick (event) {
+        let target_path;
+
+        // ... find event path for any browser ...
+        if ( event.path !== undefined ) {
+          target_path = event.path;
+        } else {
+          target_path = event.b;
+        }
+        if ( target_path === undefined ) {
+          target_path = event.composedPath(); // Use event.composedPath if event.path and event.b doesn't exist
+        }
+
+        for ( let target of target_path ) {
+          if ( target instanceof HTMLElement && target.hasAttribute('action') ) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.app.socket.userActivity(event);
+            this.dispatchEvent(new CustomEvent(CasperSimplePage.clickEvent, { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
+            this._menu.close();
+            break;
+          }
         }
       }
-    }
 
-    _contextMenuLeave (event) {
-      this._menu.classList.add('fadeout');
-      this._menu.style.opacity = 0.6;
-      this._menuHideTimer = setTimeout((e) => (this._menu.close(), this._menuHideTimer = undefined), 2000);
-    }
-
-    _contextMenuMove () {
-      if ( this._menuHideTimer !== undefined ) {
-        clearTimeout(this._menuHideTimer);
-        this._menuHideTimer = undefined;
-        this._menu.classList.remove('fadeout');
-        this._menu.style.opacity = 1.0;
+      _contextMenuLeave (event) {
+        this._menu.classList.add('fadeout');
+        this._menu.style.opacity = 0.6;
+        this._menuHideTimer = setTimeout((e) => (this._menu.close(), this._menuHideTimer = undefined), 2000);
       }
-    }
 
-    _resizeThrottler (e) {
-        // ignore resize events as long as an actualResizeHandler execution is in the queue
-        if ( ! this._resizeTimeout ) {
-          this._resizeTimeout = setTimeout(function() {
-            this._resizeTimeout = null;
-            this._resizeHandler();
-            // The actualResizeHandler will execute at a rate of 15fps
-          }.bind(this), 66);
+      _contextMenuMove () {
+        if ( this._menuHideTimer !== undefined ) {
+          clearTimeout(this._menuHideTimer);
+          this._menuHideTimer = undefined;
+          this._menu.classList.remove('fadeout');
+          this._menu.style.opacity = 1.0;
         }
+      }
+
+      _resizeThrottler (e) {
+          // ignore resize events as long as an actualResizeHandler execution is in the queue
+          if ( ! this._resizeTimeout ) {
+            this._resizeTimeout = setTimeout(function() {
+              this._resizeTimeout = null;
+              this._resizeHandler();
+              // The actualResizeHandler will execute at a rate of 15fps
+            }.bind(this), 66);
+          }
       }
 
       _resizeHandler () {
