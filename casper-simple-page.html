@@ -48,6 +48,7 @@
     }
 
     .content {
+      display: flex;
       position: relative;
       margin: 0px 20px 20px 20px;
       background: var(--secondary-color);
@@ -159,7 +160,6 @@
       connectedCallback () {
         super.connectedCallback();
         this.$.loading.margin = '12px';
-        this._resizeTimeout = undefined;
         this._isVaadinGrid = false;
 
         for (let child of this.children ) {
@@ -174,7 +174,7 @@
                 this._list.style.backgroundColor = 'var(--secondary-color)';
               }
               this._list.items = this.items;
-              this._resizeHandler();
+              this._list.style.height = 'auto';
             } else if ( child.getAttribute('slot') === 'menu' ) {
               this._menu = child;
               this._menu.fitInto = this;
@@ -185,7 +185,6 @@
             }
           }
         }
-        window.addEventListener('resize', e => this._resizeThrottler(e));
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
         this._updateState();
         setTimeout(function() {
@@ -319,6 +318,7 @@
               if ( this._isVaadinGrid ) {
                 this._list.selectedItems = [ this.activeItem ];
               }
+              this._list.style.height = 'auto';
               this._menu.refit();
               clearTimeout(this._menuHideTimer);
               this._menuHideTimer = undefined;
@@ -427,25 +427,6 @@
           this._menu.classList.remove('fadeout');
           this._menu.style.opacity = 1.0;
         }
-      }
-
-      _resizeThrottler (e) {
-          // ignore resize events as long as an actualResizeHandler execution is in the queue
-          if ( ! this._resizeTimeout ) {
-            this._resizeTimeout = setTimeout(function() {
-              this._resizeTimeout = null;
-              this._resizeHandler();
-              // The actualResizeHandler will execute at a rate of 15fps
-            }.bind(this), 66);
-          }
-      }
-
-      _resizeHandler () {
-        console.log("resize ch=", this.$.content.clientHeight);
-        if ( this.$.content.clientHeight < 10 ) {
-          debugger;
-        }
-        this._list.style.height = this.$.content.clientHeight + 'px';
       }
 
       _updateState () {
