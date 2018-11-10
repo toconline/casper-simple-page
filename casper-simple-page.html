@@ -25,89 +25,89 @@
 <dom-module id="casper-simple-page">
   <template>
     <style>
-    :host {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
+      :host {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
 
-    .paper-input {
-      width: 30%;
-    }
+      .paper-input {
+        width: 30%;
+      }
 
-    .iron-icon {
-      color: var(--primary-color);
-    }
+      .iron-icon {
+        color: var(--primary-color);
+      }
 
-    .header {
-      display: flex;
-      margin: 0px 20px 0px 20px;
-      flex-grow: 0;
-      flex-direction: row;
-      align-items: center;
-    }
+      .header {
+        display: flex;
+        margin: 0px 20px 0px 20px;
+        flex-grow: 0;
+        flex-direction: row;
+        align-items: center;
+      }
 
-    .content {
-      display: flex;
-      position: relative;
-      margin: 0px 20px 20px 20px;
-      background: var(--secondary-color);
-      flex-grow: 2;
-    }
+      .content {
+        display: flex;
+        position: relative;
+        margin: 0px 20px 20px 20px;
+        background: var(--secondary-color);
+        flex-grow: 2;
+      }
 
-    .center {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      flex-direction: column;
-      align-items: center;
-      color: #888;
-    }
+      .center {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        flex-direction: column;
+        align-items: center;
+        color: #888;
+      }
 
-    .visible {
-      display: flex
-    }
+      .visible {
+        display: flex
+      }
 
-    .empty-data {
-      --iron-icon-height: 125px;
-      --iron-icon-width:  125px;
-    }
+      .empty-data {
+        --iron-icon-height: 125px;
+        --iron-icon-width:  125px;
+      }
 
-    .fadeout {
-      opacity: 1.0;
-      transition: opacity 2.0s ease-in;
-    }
+      .fadeout {
+        opacity: 1.0;
+        transition: opacity 2.0s ease-in;
+      }
 
-  </style>
+    </style>
 
-  <div class="header">
-    <slot name="left"></slot>
-    <paper-input tabindex="1" id="search" class="paper-input" no-label-float label="[[searchHint]]">
+    <div class="header">
+      <slot name="left"></slot>
+      <paper-input tabindex="1" id="search" class="paper-input" no-label-float label="[[searchHint]]">
       <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
-    </paper-input>
-    <div style="flex-grow: 2;"></div>
-    <slot name="right"></slot>
-  </div>
-  <div id="content" class="content">
-    <slot name="list">
-    </slot>
-    <div id="spinner" class="center">
-      <loading-icon-02 id="loading"></loading-icon-02>
-      <span>[[loadingMessage]]</span>
+      </paper-input>
+      <div style="flex-grow: 2;"></div>
+      <slot name="right"></slot>
     </div>
-    <div id="tabulaRasa" class="center">
-      <iron-icon class="empty-data" icon="casper-icons:empty-data"></iron-icon>
-      <span>[[tabulaRasa]]</span>
-      <slot name="tabula-rasa-action">
-      </slot>
-      <div>
+    <div id="content" class="content">
+      <slot name="list"></slot>
+      <div id="spinner" class="center">
+        <loading-icon-02 id="loading"></loading-icon-02>
+        <span>[[loadingMessage]]</span>
       </div>
-      <slot name="menu"></slot>
-    </template>
+      <div id="tabulaRasa" class="center">
+        <iron-icon class="empty-data" icon="casper-icons:empty-data"></iron-icon>
+        <span>[[tabulaRasa]]</span>
+        <slot name="tabula-rasa-action"></slot>
+      <div>
+    </div>
+    <slot name="menu"></slot>
+  </template>
 
-    <script>
+  <script>
+
+
     /**
      * `casper-simple-page`
      * Simple application page to display a table or list
@@ -115,7 +115,7 @@
      * @customElement
      * @polymer
      */
-     class CasperSimplePage extends Polymer.Element {
+    class CasperSimplePage extends Polymer.Element {
 
       static get is () {
         return 'casper-simple-page';
@@ -219,14 +219,14 @@
         }
         this._lastQuery = query;
 
-        if ( query === '' && !filter ) {
+        if ( (query === '' && !filter) || ! this.items ) {
           this._list.items = null;
           this._list.items = this.items;
         } else {
           console.time('filter');
           let filteredItems = [];
           let queryNormalized = (query.normalize('NFD').replace(/[\u0300-\u036f]/g, '')).toLowerCase().split(' ').filter(function(el) {  return el !== '' });
-          for (let item of this.items ) {
+          for ( let item of this.items ) {
             itemLoop: {
               itemMatched = false;
               if ( this.searchFields ) {
