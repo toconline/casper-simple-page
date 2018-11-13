@@ -311,7 +311,7 @@
         // ... go up to find an element with an action attribute ...
         for ( target of target_path ) {
           if ( target.idx !== undefined && target.hasAttribute('action')) {
-            this.activeItem = this.items[target.idx];
+            this.activeItem = this._list.items[target.idx];
             action = target.getAttribute('action');
             if ( action === 'menu' ) {
               this._menu.positionTarget = target;
