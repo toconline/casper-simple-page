@@ -21,11 +21,17 @@
 <link rel="import" href="../casper-icons/casper-icons.html">
 <link rel="import" href="../casper-server-overlay/casper-server-overlay.html">
 <link rel="import" href="../casper-context-menu/casper-context-menu.html">
+<link rel="import" href="../vaadin-split-layout/vaadin-split-layout.html">
 
 <dom-module id="casper-simple-page">
   <template>
     <style>
       :host {
+        display: block;
+        height: 100%;
+      }
+
+      #simplePage {
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -53,6 +59,7 @@
         margin: 0px 20px 20px 20px;
         background: var(--secondary-color);
         flex-grow: 2;
+        height:100%;
       }
 
       .center {
@@ -80,34 +87,49 @@
         transition: opacity 2.0s ease-in;
       }
 
+      vaadin-split-layout {
+        height: 100%;
+      }
+
     </style>
 
     <div class="header">
       <slot name="left"></slot>
       <paper-input tabindex="1" id="search" class="paper-input" no-label-float label="[[searchHint]]">
-      <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
+        <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
       </paper-input>
       <div style="flex-grow: 2;"></div>
       <slot name="right"></slot>
     </div>
-    <div id="content" class="content">
-      <slot name="list"></slot>
-      <div id="spinner" class="center">
-        <loading-icon-02 id="loading"></loading-icon-02>
-        <span>[[loadingMessage]]</span>
+    <vaadin-split-layout id="splitLayout">
+      <div id="primary">
+        <div id="simplePage">
+          <div id="content" class="content">
+            <slot name="list"></slot>
+            <div id="spinner" class="center">
+              <loading-icon-02 id="loading"></loading-icon-02>
+              <span>[[loadingMessage]]</span>
+            </div>
+            <div id="tabulaRasa" class="center">
+              <iron-icon class="empty-data" icon="casper-icons:empty-data"></iron-icon>
+              <span>[[tabulaRasa]]</span>
+              <slot name="tabula-rasa-action"></slot>
+            </div>
+          </div>
+          <slot name="menu"></slot>
+        </div>
       </div>
-      <div id="tabulaRasa" class="center">
-        <iron-icon class="empty-data" icon="casper-icons:empty-data"></iron-icon>
-        <span>[[tabulaRasa]]</span>
-        <slot name="tabula-rasa-action"></slot>
-      <div>
-    </div>
-    <slot name="menu"></slot>
+      <template is="dom-if" if="[[useSplitter]]">
+        <div id="secondary">
+          <slot name="rightSection"></slot>
+        </div>
+      </template>
+    </vaadin-split-layout>
   </template>
 
   <script>
 
-
+    'use strict';
     /**
      * `casper-simple-page`
      * Simple application page to display a table or list
@@ -148,6 +170,11 @@
           },
           filterFunction: {
             type: Object
+          },
+          useSplitter: {
+            type: Boolean,
+            value: false,
+            observer: '_splitterChangedState'
           }
         };
 
@@ -155,6 +182,16 @@
 
       static get clickEvent () {
         return 'tap';
+      }
+
+      _splitterChangedState () {
+        this.$.splitLayout.shadowRoot.querySelector('#splitter').style.opacity = this.useSplitter ? 1 : 0;
+        this.$.primary.style.width = this.useSplitter ? "60%" : "100%";
+        setTimeout(function() {
+          if ( this.shadowRoot.querySelector('#secondary') ) {
+              this.shadowRoot.querySelector('#secondary').style.width = this.useSplitter ? "40%" : "0%";
+          }
+        }.bind(this), 0);
       }
 
       connectedCallback () {
