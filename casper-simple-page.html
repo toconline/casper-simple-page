@@ -171,6 +171,10 @@
           filterFunction: {
             type: Object
           },
+          noFilter: {
+            type: Boolean,
+            value: false
+          },
           useSplitter: {
             type: Boolean,
             value: false,
@@ -212,7 +216,9 @@
             }
           }
         }
-        this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
+        if ( ! this.noFilter ) {
+          this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
+        }
         this._updateState();
         setTimeout(function() {
           this.$.search.focus();
