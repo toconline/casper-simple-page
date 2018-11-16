@@ -188,16 +188,6 @@
         return 'tap';
       }
 
-      _splitterChangedState () {
-        this.$.splitLayout.shadowRoot.querySelector('#splitter').style.opacity = this.useSplitter ? 1 : 0;
-        this.$.primary.style.width = this.useSplitter ? "60%" : "100%";
-        setTimeout(function() {
-          if ( this.shadowRoot.querySelector('#secondary') ) {
-              this.shadowRoot.querySelector('#secondary').style.width = this.useSplitter ? "40%" : "0%";
-          }
-        }.bind(this), 0);
-      }
-
       connectedCallback () {
         super.connectedCallback();
         this.$.loading.margin = '12px';
@@ -239,6 +229,16 @@
         super.disconnectedCallback();
         clearTimeout(this._filterDebounceTimer);
         this._filterDebounceTimer = undefined;
+      }
+
+      _splitterChangedState () {
+        this.$.splitLayout.shadowRoot.querySelector('#splitter').style.opacity = this.useSplitter ? 1 : 0;
+        this.$.primary.style.width = this.useSplitter ? "60%" : "100%";
+        setTimeout(function() {
+          if ( this.shadowRoot.querySelector('#secondary') ) {
+              this.shadowRoot.querySelector('#secondary').style.width = this.useSplitter ? "40%" : "0%";
+          }
+        }.bind(this), 0);
       }
 
       _onItemsChanged (value) {
