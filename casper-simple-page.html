@@ -29,6 +29,7 @@
       :host {
         display: block;
         height: 100%;
+        margin: 20px 0;
       }
 
       #simplePage {
@@ -171,13 +172,14 @@
           filterFunction: {
             type: Object
           },
-          noFilter: {
-            type: Boolean,
-            value: false
-          },
           useSplitter: {
             type: Boolean,
             value: false,
+            observer: '_splitterChangedState'
+          },
+          splitterPageWidth: {
+            type: Number,
+            value: 60,
             observer: '_splitterChangedState'
           }
         };
@@ -186,6 +188,18 @@
 
       static get clickEvent () {
         return 'tap';
+      }
+
+      _splitterChangedState () {
+        this.$.splitLayout.shadowRoot.querySelector('#splitter').style.display = this.useSplitter ? "block" : "none";
+        this.$.primary.style.width = this.useSplitter ? (this.splitterPageWidth + "%") : "100%";
+        setTimeout(function() {
+          if ( this.shadowRoot.querySelector('#secondary') ) {
+              this.shadowRoot.querySelector('#secondary').style.width = this.useSplitter ? ((100 - this.splitterPageWidth) + "%") : "0%";
+          }
+        }.bind(this), 0);
+        //this.$.splitLayout.addEventListener('splitter-dragend', (e) => console.log(e));
+        //this.$.splitLayout.addEventListener('iron-resize', (e) => console.log(e));
       }
 
       connectedCallback () {
@@ -216,22 +230,10 @@
             }
           }
         }
-        if ( ! this.noFilter ) {
-          this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
-        }
+        this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
         this._updateState();
         setTimeout(function() {
           this.$.search.focus();
-        }.bind(this), 0);
-      }
-
-      _splitterChangedState () {
-        this.$.splitLayout.shadowRoot.querySelector('#splitter').style.opacity = this.useSplitter ? 1 : 0;
-        this.$.primary.style.width = this.useSplitter ? "60%" : "100%";
-        setTimeout(function() {
-          if ( this.shadowRoot.querySelector('#secondary') ) {
-              this.shadowRoot.querySelector('#secondary').style.width = this.useSplitter ? "40%" : "0%";
-          }
         }.bind(this), 0);
       }
 
