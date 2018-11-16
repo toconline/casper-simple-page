@@ -235,6 +235,12 @@
         }.bind(this), 0);
       }
 
+      disconnectedCallback () {
+        super.disconnectedCallback();
+        clearTimeout(this._filterDebounceTimer);
+        this._filterDebounceTimer = undefined;
+      }
+
       _onItemsChanged (value) {
         if ( this._list ) {
           this._list.items = value;
