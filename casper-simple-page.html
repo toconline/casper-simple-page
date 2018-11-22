@@ -226,7 +226,8 @@
               this._menu.addEventListener('click', (e) => this._contextMenuClick(e));
               this._menu.addEventListener('mouseleave', (e) => this._contextMenuLeave(e));
               this._menu.addEventListener('mousemove', (e) => this._contextMenuMove(e));
-              this.shadowRoot.appendChild(child); // Important! move to this page shadow root
+              // Important! move to this page shadow root
+              // this.shadowRoot.appendChild(child);
             }
           }
         }
