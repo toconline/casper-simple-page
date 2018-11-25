@@ -234,9 +234,7 @@
         }
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
         this._updateState();
-        setTimeout(function() {
-          this.$.search.focus();
-        }.bind(this), 0);
+        setTimeout(() => this.$.search.focus(), 0);
       }
 
       disconnectedCallback () {
@@ -248,12 +246,12 @@
       _onItemsChanged (value) {
         if ( this._list ) {
           this._list.items = value;
+          this.filterItems();
         }
         this._updateState();
       }
 
       _debouncedFilterItems (event) {
-
         if ( this._filterDebounceTimer === undefined ) {
           this.filterItems(event.detail.value);
         } else {
