@@ -232,6 +232,13 @@
             }
           }
         }
+
+        this._list.addEventListener('active-item-changed', function(event) {
+          if (event.detail.value) {
+            this.activeItem = event.detail.value;
+          }
+        }.bind(this));
+
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
         this._updateState();
         setTimeout(() => this.$.search.focus(), 0);
@@ -362,7 +369,6 @@
         // ... go up to find an element with an action attribute ...
         for ( target of target_path ) {
           if ( target.idx !== undefined && target.hasAttribute('action')) {
-            this.activeItem = this._list.items[target.idx];
             action = target.getAttribute('action');
             if ( action === 'menu' ) {
               this._menu.positionTarget = target;
