@@ -182,6 +182,10 @@
             type: Number,
             value: 60,
             observer: '_splitterChangedState'
+          },
+          noFilter: {
+            type: Boolean,
+            value: false
           }
         };
 
@@ -199,11 +203,10 @@
               this.shadowRoot.querySelector('#secondary').style.width = this.useSplitter ? ((100 - this.splitterPageWidth) + "%") : "0%";
           }
         }.bind(this), 0);
-        //this.$.splitLayout.addEventListener('splitter-dragend', (e) => console.log(e));
-        //this.$.splitLayout.addEventListener('iron-resize', (e) => console.log(e));
       }
 
       connectedCallback () {
+
         super.connectedCallback();
         this.$.loading.margin = '12px';
         this._isVaadinGrid = false;
@@ -227,8 +230,6 @@
               this._menu.addEventListener('click', (e) => this._contextMenuClick(e));
               this._menu.addEventListener('mouseleave', (e) => this._contextMenuLeave(e));
               this._menu.addEventListener('mousemove', (e) => this._contextMenuMove(e));
-              // Important! move to this page shadow root
-              // this.shadowRoot.appendChild(child);
             }
           }
         }
@@ -268,85 +269,116 @@
       }
 
       filterItems (query) {
-        let itemMatched, matches;
+        if (this.noFilter || typeof this.items == "undefined" || this.items.length === 0) {
+            return;
+        }
+
+        let itemMatched, totalMatches;
         let filter = this.filterFunction;
 
         query = query || this.$.search.value;
-        if ( query === this._lastQuery && !filter) {
-          return;
+        if ( query === this._lastQuery && !filter ) {
+            return;
         }
+
         this._lastQuery = query;
 
-        if ( (query === '' && !filter) || ! this.items ) {
+        if ( (query === '' && !filter) || !this.items ) {
           this._list.items = null;
           this._list.items = this.items;
         } else {
-          console.time('filter');
           let filteredItems = [];
-          let queryNormalized = (query.normalize('NFD').replace(/[\u0300-\u036f]/g, '')).toLowerCase().split(' ').filter(function(el) {  return el !== '' });
-          for ( let item of this.items ) {
+          let queryNormalized = (query.normalize('NFD').replace(/[\u0300-\u036f]/g, '')).toLowerCase().split(' ').filter(function(el) { return el !== '' });
+
+          for (let item of this.items) {
+            // If no searchFields are specified, iterate the item keys to include all 'stringable' fields
+            if (!this.searchFields) {
+              let searchFields = [];
+              Object.keys(item).forEach((index) => {
+                try {
+                  if (item[index].toString()) {
+                      searchFields.push(index);
+                  }
+                } catch (e) {}
+              });
+              this.searchFields = searchFields;
+            }
             itemLoop: {
               itemMatched = false;
-              if ( this.searchFields ) {
-                for ( let field of this.searchFields ) {
+              totalMatches = 0;
+              if (query !== '') {
+                for (let term of queryNormalized) {
+                  termLoop: {
+                    for (let field of this.searchFields) {
+                      try {
+                        let normalizedField = item[field].toString().normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                        let filterResult = 1;
 
-                  matches = 0;
-                  let normalizedField = item[field].toString().normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                  let filterResult = 1;
-
-                  if (filter) {
-                    filterResult = filter(queryNormalized.join(" "), normalizedField, field);
-                    switch (filterResult) {
-                      case 0:
-                      itemMatched = false;
-                      break itemLoop;
-                      break;
-                      case 1:
-                      if ( query === '' ) {
-                        itemMatched = true;
-                      }
-                      break;
-                      case 2:
-                      itemMatched = true;
-                      break itemLoop;
-                      break;
-                    }
-                  }
-
-                  if ( query !== '' ) {
-                    for ( let term of queryNormalized ) {
-                      if ( normalizedField.indexOf(term) !== -1 && filterResult === 1) {
-                        matches++;
-                        if ( matches === queryNormalized.length ) {
-                          itemMatched = true;
-                          if (!filter) {
-                            break itemLoop;
-                          } else {
-                            continue;
+                        if (filter) {
+                          filterResult = filter(queryNormalized.join(" "), normalizedField, field);
+                          switch (filterResult) {
+                            case 0:
+                              itemMatched = false;
+                              break itemLoop;
+                            case 2:
+                              itemMatched = true;
+                              break itemLoop;
                           }
                         }
-                      }
+
+                        if (normalizedField.indexOf(term) !== -1 && filterResult === 1) {
+                          totalMatches++;
+                          if (totalMatches >= queryNormalized.length) {
+                            itemMatched = true;
+                            if (!filter) {
+                                break itemLoop;
+                            } else {
+                                continue;
+                            }
+                          } else {
+                            break termLoop;
+                          }
+                        }
+                      } catch (e) {}
                     }
                   }
+                }
+              } else {
+                for (let field of this.searchFields) {
 
+                  let filterResult = 1;
+                  let normalizedField = item[field].toString().normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+                  filterResult = filter('', normalizedField, field);
+                  switch (filterResult) {
+                    case 0:
+                      itemMatched = false;
+                      break itemLoop;
+                    case 1:
+                      itemMatched = true;
+                      break;
+                    case 2:
+                      itemMatched = true;
+                      break itemLoop;
+                  }
                 }
               }
             }
+
             if ( itemMatched ) {
-              filteredItems.push(item);
+                filteredItems.push(item);
             }
           }
-          console.timeEnd('filter');
           this._list.items = null;
           this._list.items = filteredItems;
         }
 
-        if ( this._list.items === null ||  this._list.items === undefined ) {
-          this.state = 'loading';
-        } else if ( this._list.items.length === 0 ) {
-          this.state = 'empty';
+        if (this._list.items === null || this._list.items === undefined) {
+            this.state = 'loading';
+        } else if (this._list.items.length === 0) {
+            this.state = 'empty';
         } else {
-          this.state = 'loaded';
+            this.state = 'loaded';
         }
 
         this._filterDebounceTimer = undefined;
@@ -400,7 +432,7 @@
           event.stopPropagation();
           this.app.socket.userActivity(event);
           this.app.tooltip.hide();
-          this.dispatchEvent(new CustomEvent(CasperSimplePage.clickEvent, { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
+          this.dispatchEvent(new CustomEvent(CasperSimplePage.clickEvent, { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
         }
 
       }
@@ -500,26 +532,26 @@
         if ( this._state !== state ) {
           switch (state) {
             case 'loading':
-            this.$.tabulaRasa.classList.remove('visible');
-            this.$.spinner.classList.add('visible');
-            if ( this._list ) {
-              this._list.classList.remove('visible');
-              this._list.style.display = 'none';
-            }
-            this.$.search.disabled = true;
+              this.$.tabulaRasa.classList.remove('visible');
+              this.$.spinner.classList.add('visible');
+              if ( this._list ) {
+                this._list.classList.remove('visible');
+                this._list.style.display = 'none';
+              }
+              this.$.search.disabled = true;
             break;
             case 'empty':
-            this.$.tabulaRasa.classList.add('visible');
-            this.$.spinner.classList.remove('visible');
-            this._list.style.display = 'none';
-            this.$.search.disabled = false;
+              this.$.tabulaRasa.classList.add('visible');
+              this.$.spinner.classList.remove('visible');
+              this._list.style.display = 'none';
+              this.$.search.disabled = false;
             break;
             case 'loaded':
             default:
-            this.$.tabulaRasa.classList.remove('visible');
-            this.$.spinner.classList.remove('visible');
-            this._list.style.display = 'block';
-            this.$.search.disabled = false;
+              this.$.tabulaRasa.classList.remove('visible');
+              this.$.spinner.classList.remove('visible');
+              this._list.style.display = 'block';
+              this.$.search.disabled = false;
             break;
           }
         }
