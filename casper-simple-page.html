@@ -97,7 +97,7 @@
 
     <div class="header">
       <slot name="left"></slot>
-      <paper-input tabindex="1" id="search" class="paper-input" no-label-float label="[[searchHint]]">
+      <paper-input tabindex="0" id="search" class="paper-input" no-label-float label="[[searchHint]]">
         <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
       </paper-input>
       <div style="flex-grow: 2;"></div>
@@ -242,7 +242,9 @@
 
         this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
         this._updateState();
-        setTimeout(() => this.$.search.focus(), 0);
+        Polymer.RenderStatus.afterNextRender(this.$.search, () => {
+          this.$.search.focus();
+        });
       }
 
       disconnectedCallback () {
@@ -273,14 +275,13 @@
             return;
         }
 
-        let itemMatched, totalMatches;
         let filter = this.filterFunction;
-
         query = query || this.$.search.value;
         if ( query === this._lastQuery && !filter ) {
             return;
         }
 
+        let itemMatched, totalMatches;
         this._lastQuery = query;
 
         if ( (query === '' && !filter) || !this.items ) {
@@ -297,7 +298,7 @@
               Object.keys(item).forEach((index) => {
                 try {
                   if (item[index].toString()) {
-                      searchFields.push(index);
+                    searchFields.push(index);
                   }
                 } catch (e) {}
               });
