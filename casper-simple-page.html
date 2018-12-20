@@ -271,7 +271,7 @@
       }
 
       filterItems (query) {
-        if (this.noFilter || typeof this.items == "undefined" || this.items.length === 0) {
+        if (this.noFilter || this.items === undefined || !this.items || this.items.length === 0) {
             return;
         }
 
