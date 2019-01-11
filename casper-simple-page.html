@@ -404,10 +404,11 @@
           if ( target.idx !== undefined && target.hasAttribute('action')) {
             action = target.getAttribute('action');
             if ( action === 'menu' ) {
-              this._menu.positionTarget = target;
-              if ( this._isVaadinGrid ) {
-                this._list.selectedItems = [ this.activeItem ];
+              if (this._menu.positionTarget && this._menu.positionTarget === target && this._menu && this._menu.opened ) {
+                this._menu.close();
+                return;
               }
+              this._menu.positionTarget = target;
               this._list.style.height = 'auto';
               this._menu.refit();
               clearTimeout(this._menuHideTimer);
