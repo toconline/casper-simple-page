@@ -102,7 +102,7 @@
 
     <div class="header">
       <slot name="left"></slot>
-      <paper-input tabindex="0" id="search" class="paper-input" no-label-float label="[[searchHint]]">
+      <paper-input tabindex="0" id="search" class="paper-input" no-label-float label="[[searchHint]]" hidden$="[[noFilter]]">
         <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
       </paper-input>
       <slot name="middle"></slot>
