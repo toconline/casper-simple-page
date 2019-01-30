@@ -222,7 +222,7 @@
               this._list = child;
               this._list.style.display = 'none';
               this._list.addEventListener('click', (e) => this._onClick(e));
-              this._list.addEventListener('mousemove', (e) => this._onMousemove(e));
+              this._list.addEventListener('mousemove', (e) => this.app.tooltip.mouseMoveToolip(e));
               if ( this._list.tagName === 'VAADIN-GRID' ) {
                 this._isVaadinGrid = true;
                 this._list.style.backgroundColor = 'var(--secondary-color)';
@@ -442,47 +442,6 @@
           this.dispatchEvent(new CustomEvent(CasperSimplePage.clickEvent, { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
         }
 
-      }
-
-      _onMousemove (event) {
-        let depth = 0;
-        let target_path;
-
-        // ... detect if the mouse is still inside the BB that triggered the tooltip ...
-        if ( this._tooltipBbox !== undefined ) {
-          if (event.clientX >= this._tooltipBbox.left && event.clientX <= this._tooltipBbox.right &&
-              event.clientY >= this._tooltipBbox.top  && event.clientY <= this._tooltipBbox.bottom) {
-            return;
-          }
-          this.app.tooltip.hide();
-          this._tooltipBbox = undefined;
-        }
-
-        // ... find event path for any browser ...
-        if ( event.path !== undefined ) {
-          target_path = event.path;
-        } else {
-          target_path = event.b;
-        }
-        if ( target_path === undefined ) {
-          target_path = event.composedPath(); // Use event.composedPath if event.path and event.b doesn't exist
-        }
-
-        // ... go up in event path to find an element with a tooltip attribute or prop ...
-        for ( let target of target_path ) {
-          if ( target instanceof HTMLElement ) {
-            let tooltip = target.tooltip || target.getAttribute('tooltip');
-            if ( tooltip ) {
-              this._tooltipBbox = target.getBoundingClientRect();
-              this.app.tooltip.show(tooltip,  event.composedPath()[0]);
-              break;
-            }
-          }
-          depth++;
-          if  ( depth === 3 ) {
-            break;
-          }
-        }
       }
 
       _contextMenuClick (event) {
