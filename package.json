@@ -1,7 +1,7 @@
 {
   "description": "Simple application table to display a table or list",
   "name": "@casper2020/casper-simple-page",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "resolutions": {
     "inherits": "2.0.3",
     "samsam": "1.1.3",
@@ -10,7 +10,7 @@
   },
   "main": "casper-simple-page.js",
   "dependencies": {
-    "@casper2020/casper-icons": "^1.0.0-rc.1",
+    "@casper2020/casper-icons": "^1.x",
     "@polymer/iron-icon": "^3.0.1",
     "@polymer/paper-input": "^3.0.0",
     "@polymer/polymer": "^3.0.0",
