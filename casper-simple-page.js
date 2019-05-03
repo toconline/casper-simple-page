@@ -51,7 +51,7 @@ class CasperSimplePage extends PolymerElement {
 
         .header {
           display: flex;
-          margin: 0px 20px 0px 20px;
+          margin: 0 20px;
           flex-grow: 0;
           flex-direction: row;
           align-items: center;
@@ -94,14 +94,20 @@ class CasperSimplePage extends PolymerElement {
         vaadin-split-layout {
           height: 100%;
         }
+
+        slot[name=right] {
+          display: flex;
+          margin-left: auto;
+        }
+
       </style>
 
       <div class="header">
         <slot name="left"></slot>
-        <paper-input tabindex="1" id="search" class="paper-input" no-label-float="" label="[[searchHint]]">
+        <paper-input tabindex="0" id="search" class="paper-input" no-label-float label="[[searchHint]]" hidden$="[[noFilter]]">
           <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
         </paper-input>
-        <div style="flex-grow: 2;"></div>
+        <slot name="middle"></slot>
         <slot name="right"></slot>
       </div>
       <vaadin-split-layout id="splitLayout">
@@ -170,7 +176,7 @@ class CasperSimplePage extends PolymerElement {
       },
       splitterPageWidth: {
         type: Number,
-        value: 60,
+        value: 40,
         observer: '_splitterChangedState'
       },
       noFilter: {
@@ -187,10 +193,10 @@ class CasperSimplePage extends PolymerElement {
 
   _splitterChangedState () {
     this.$.splitLayout.shadowRoot.querySelector('#splitter').style.display = this.useSplitter ? "block" : "none";
-    this.$.primary.style.width = this.useSplitter ? (this.splitterPageWidth + "%") : "100%";
+    this.$.primary.style.width = this.useSplitter ? ((100 - this.splitterPageWidth) + "%") : "100%";
     setTimeout(function() {
       if ( this.shadowRoot.querySelector('#secondary') ) {
-          this.shadowRoot.querySelector('#secondary').style.width = this.useSplitter ? ((100 - this.splitterPageWidth) + "%") : "0%";
+          this.shadowRoot.querySelector('#secondary').style.width = this.useSplitter ? (this.splitterPageWidth + "%") : "0%";
       }
     }.bind(this), 0);
   }
@@ -207,7 +213,7 @@ class CasperSimplePage extends PolymerElement {
           this._list = child;
           this._list.style.display = 'none';
           this._list.addEventListener('click', (e) => this._onClick(e));
-          this._list.addEventListener('mousemove', (e) => this._onMousemove(e));
+          this._list.addEventListener('mousemove', (e) => this.app.tooltip.mouseMoveToolip(e));
           if ( this._list.tagName === 'VAADIN-GRID' ) {
             this._isVaadinGrid = true;
             this._list.style.backgroundColor = 'var(--secondary-color)';
@@ -232,7 +238,9 @@ class CasperSimplePage extends PolymerElement {
 
     this.$.search.addEventListener('value-changed', (e) => this._debouncedFilterItems(e));
     this._updateState();
-    setTimeout(() => this.$.search.focus(), 0);
+    Polymer.RenderStatus.afterNextRender(this.$.search, () => {
+      this.$.search.focus();
+    });
   }
 
   disconnectedCallback () {
@@ -259,18 +267,17 @@ class CasperSimplePage extends PolymerElement {
   }
 
   filterItems (query) {
-    if (this.noFilter || typeof this.items == "undefined" || this.items.length === 0) {
+    if (this.noFilter || this.items === undefined || !this.items || this.items.length === 0) {
         return;
     }
 
-    let itemMatched, totalMatches;
     let filter = this.filterFunction;
-
     query = query || this.$.search.value;
     if ( query === this._lastQuery && !filter ) {
         return;
     }
 
+    let itemMatched, totalMatches;
     this._lastQuery = query;
 
     if ( (query === '' && !filter) || !this.items ) {
@@ -287,7 +294,7 @@ class CasperSimplePage extends PolymerElement {
           Object.keys(item).forEach((index) => {
             try {
               if (item[index].toString()) {
-                  searchFields.push(index);
+                searchFields.push(index);
               }
             } catch (e) {}
           });
@@ -393,10 +400,11 @@ class CasperSimplePage extends PolymerElement {
       if ( target.idx !== undefined && target.hasAttribute('action')) {
         action = target.getAttribute('action');
         if ( action === 'menu' ) {
-          this._menu.positionTarget = target;
-          if ( this._isVaadinGrid ) {
-            this._list.selectedItems = [ this.activeItem ];
+          if (this._menu.positionTarget && this._menu.positionTarget === target && this._menu && this._menu.opened ) {
+            this._menu.close();
+            return;
           }
+          this._menu.positionTarget = target;
           this._list.style.height = 'auto';
           this._menu.refit();
           clearTimeout(this._menuHideTimer);
@@ -425,47 +433,6 @@ class CasperSimplePage extends PolymerElement {
       this.dispatchEvent(new CustomEvent(CasperSimplePage.clickEvent, { bubbles: true, composed: true, detail: { item: this.activeItem, target: target }}));
     }
 
-  }
-
-  _onMousemove (event) {
-    let depth = 0;
-    let target_path;
-
-    // ... detect if the mouse is still inside the BB that triggered the tooltip ...
-    if ( this._tooltipBbox !== undefined ) {
-      if (event.clientX >= this._tooltipBbox.left && event.clientX <= this._tooltipBbox.right &&
-          event.clientY >= this._tooltipBbox.top  && event.clientY <= this._tooltipBbox.bottom) {
-        return;
-      }
-      this.app.tooltip.hide();
-      this._tooltipBbox = undefined;
-    }
-
-    // ... find event path for any browser ...
-    if ( event.path !== undefined ) {
-      target_path = event.path;
-    } else {
-      target_path = event.b;
-    }
-    if ( target_path === undefined ) {
-      target_path = event.composedPath(); // Use event.composedPath if event.path and event.b doesn't exist
-    }
-
-    // ... go up in event path to find an element with a tooltip attribute or prop ...
-    for ( let target of target_path ) {
-      if ( target instanceof HTMLElement ) {
-        let tooltip = target.tooltip || target.getAttribute('tooltip');
-        if ( tooltip ) {
-          this._tooltipBbox = target.getBoundingClientRect();
-          this.app.tooltip.show(tooltip,  event.composedPath()[0]);
-          break;
-        }
-      }
-      depth++;
-      if  ( depth === 3 ) {
-        break;
-      }
-    }
   }
 
   _contextMenuClick (event) {
