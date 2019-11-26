@@ -225,8 +225,6 @@ class CasperSimplePage extends PolymerElement {
           this._menu = child;
           this._menu.fitInto = this;
           this._menu.addEventListener('click', (e) => this._contextMenuClick(e));
-          this._menu.addEventListener('mouseleave', (e) => this._contextMenuLeave(e));
-          this._menu.addEventListener('mousemove', (e) => this._contextMenuMove(e));
         }
       }
     }
@@ -458,21 +456,6 @@ class CasperSimplePage extends PolymerElement {
         this._menu.close();
         break;
       }
-    }
-  }
-
-  _contextMenuLeave (event) {
-    this._menu.classList.add('fadeout');
-    this._menu.style.opacity = 0.6;
-    this._menuHideTimer = setTimeout((e) => (this._menu.close(), this._menuHideTimer = undefined), 2000);
-  }
-
-  _contextMenuMove () {
-    if ( this._menuHideTimer !== undefined ) {
-      clearTimeout(this._menuHideTimer);
-      this._menuHideTimer = undefined;
-      this._menu.classList.remove('fadeout');
-      this._menu.style.opacity = 1.0;
     }
   }
 
