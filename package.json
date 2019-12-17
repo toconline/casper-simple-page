@@ -11,10 +11,10 @@
   "main": "casper-simple-page.js",
   "dependencies": {
     "@casper2020/casper-icons": "^1.x",
-    "@polymer/iron-icon": "^3.0.1",
-    "@polymer/paper-input": "^3.0.0",
-    "@polymer/polymer": "^3.0.0",
-    "@vaadin/vaadin-split-layout": "^4.1.0"
+    "@polymer/iron-icon": "^3.x",
+    "@polymer/paper-input": "^3.x",
+    "@polymer/polymer": "^3.x",
+    "@vaadin/vaadin-split-layout": "^4.x"
   },
   "devDependencies": {
     "@polymer/iron-demo-helpers": "^3.0.0",
