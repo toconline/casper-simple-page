@@ -18,9 +18,8 @@
   -
 */
 
-import '@polymer/iron-icon/iron-icon.js';
 import '@polymer/paper-input/paper-input.js';
-import '@casper2020/casper-icons/casper-icons.js';
+import '@casper2020/casper-icons/casper-icon.js';
 import '@vaadin/vaadin-split-layout/vaadin-split-layout.js';
 import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
 import { afterNextRender } from '@polymer/polymer/lib/utils/render-status.js';
@@ -46,7 +45,8 @@ class CasperSimplePage extends PolymerElement {
           width: 30%;
         }
 
-        .iron-icon {
+        .casper-icon {
+          margin-right: 10px;
           color: var(--primary-color);
         }
 
@@ -83,8 +83,9 @@ class CasperSimplePage extends PolymerElement {
         }
 
         .empty-data {
-          --iron-icon-height: 125px;
-          --iron-icon-width:  125px;
+          width: 125px;
+          height: 125px;
+          margin-bottom: 15px;
         }
 
         .fadeout {
@@ -106,7 +107,7 @@ class CasperSimplePage extends PolymerElement {
       <div class="header">
         <slot name="left"></slot>
         <paper-input tabindex="0" id="search" class="paper-input" no-label-float label="[[searchHint]]" hidden$="[[noFilter]]">
-          <iron-icon class="iron-icon" icon="casper-icons:search" slot="prefix"></iron-icon>
+          <casper-icon class="casper-icon" icon="fa-regular:search" slot="prefix"></casper-icon>
         </paper-input>
         <slot name="middle"></slot>
         <slot name="right"></slot>
@@ -121,7 +122,7 @@ class CasperSimplePage extends PolymerElement {
                 <span>[[loadingMessage]]</span>
               </div>
               <div id="tabulaRasa" class="center">
-                <iron-icon class="empty-data" icon="casper-icons:empty-data"></iron-icon>
+                <casper-icon class="empty-data" icon="fa-light:clipboard"></casper-icon>
                 <span>[[tabulaRasa]]</span>
                 <slot name="tabula-rasa-action"></slot>
               </div>
