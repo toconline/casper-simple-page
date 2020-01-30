@@ -184,6 +184,10 @@ class CasperSimplePage extends PolymerElement {
       noFilter: {
         type: Boolean,
         value: false
+      },
+      displayedItems: {
+        type: Array,
+        notify: true
       }
     };
 
@@ -367,7 +371,7 @@ class CasperSimplePage extends PolymerElement {
         }
       }
       this._list.items = null;
-      this._list.items = filteredItems;
+      this._list.items = this.displayedItems = filteredItems;
     }
 
     if (this._list.items === null || this._list.items === undefined) {
