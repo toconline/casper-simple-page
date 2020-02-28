@@ -276,7 +276,7 @@ class CasperSimplePage extends PolymerElement {
     }
 
     let filter = this.filterFunction;
-    query = query || this.$.search.value;
+    query = query || this.$.search.value || '';
     if ( query === this._lastQuery && !filter ) {
         return;
     }
