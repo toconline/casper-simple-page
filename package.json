@@ -1,7 +1,7 @@
 {
   "description": "Simple application table to display a table or list",
   "name": "@cloudware-casper/casper-simple-page",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
   },
