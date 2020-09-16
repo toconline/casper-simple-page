@@ -13,7 +13,7 @@
   },
   "main": "casper-simple-page.js",
   "dependencies": {
-    "@cloudware-casper/casper-icons": "^1.x",
+    "@cloudware-casper/casper-icons": "^2.x",
     "@polymer/iron-icon": "^3.x",
     "@polymer/paper-input": "^3.x",
     "@polymer/polymer": "^3.x",
