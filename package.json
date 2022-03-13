@@ -5,16 +5,14 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
   },
+  "resolutions": {
+    "lit-element": "^3.x"
+  },
   "main": "casper-simple-page.js",
   "dependencies": {
     "@cloudware-casper/casper-icons": "^3.x",
     "@polymer/paper-input": "^3.x",
     "@polymer/polymer": "^3.x",
     "@vaadin/vaadin-split-layout": "^4.x"
-  },
-  "devDependencies": {
-    "@polymer/iron-demo-helpers": "^3.0.0",
-    "@webcomponents/webcomponentsjs": "^2.0.0",
-    "wct-browser-legacy": "^1.0.1"
   }
 }
